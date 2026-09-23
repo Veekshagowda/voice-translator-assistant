@@ -1,8 +1,8 @@
-import Navbar from "../../components/Navbar/Navbar";
+import Navbar from "../../components/navbar/navbar";
 import Hero from "../../components/hero/hero";
-import Stats from "../../components/Stats/Stats";
-import Features from "../../components/Features/Features";
-import About from "../../components/About/About";
+import Stats from "../../components/stats/stats";
+import Features from "../../components/features/features";
+import About from "../../components/about/about";
 import Footer from "../../components/footer/footer";
 
 function Home() {
