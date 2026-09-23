@@ -1,0 +1,61 @@
+.history-page {
+  min-height: 100vh;
+  padding: 40px;
+  background: #111827;
+  color: white;
+}
+
+.history-page h1 {
+  color: white;
+  font-size: 32px;
+  margin-bottom: 30px;
+}
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.history-card {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 15px;
+  padding: 22px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.history-card h3 {
+  color: white;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.history-card p {
+  color: #d1d5db;
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+.history-card .detected {
+  color: #a78bfa;
+}
+
+.history-card .translated {
+  color: #34d399;
+}
+
+.history-card .target {
+  color: #60a5fa;
+}
+
+.history-card small {
+  color: #9ca3af;
+  display: block;
+  margin-top: 15px;
+}
+
+.no-history {
+  color: #d1d5db;
+  font-size: 18px;
+}
