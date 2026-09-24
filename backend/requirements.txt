@@ -6,3 +6,4 @@ openai-whisper
 deep-translator
 google-genai
 python-dotenv
+gtts
