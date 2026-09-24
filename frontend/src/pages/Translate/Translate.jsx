@@ -7,7 +7,7 @@ import {
 
 import Translator from "../../components/translator/translator";
 
-import "../../components/Translator/translator.css";
+import "../../components/translator/translator.css";
 
 
 function Translate() {
