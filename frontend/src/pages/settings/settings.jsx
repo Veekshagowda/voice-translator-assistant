@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import "./Settings.css";
+import "./settings.css";
 
 function Settings() {
   const [targetLanguage, setTargetLanguage] = useState("kn");

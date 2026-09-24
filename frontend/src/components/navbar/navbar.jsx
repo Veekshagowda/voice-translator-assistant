@@ -1,4 +1,4 @@
-import "./Navbar.css";
+import "./navbar.css";
 import { FaMicrophone } from "react-icons/fa";
 import { motion } from "framer-motion";
 

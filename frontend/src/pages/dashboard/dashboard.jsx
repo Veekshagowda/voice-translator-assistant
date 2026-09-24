@@ -1,4 +1,4 @@
-import "./Dashboard.css";
+import "./dashboard.css";
 import { Link } from "react-router-dom";
 
 import Image from "../../assets/mic.png";
