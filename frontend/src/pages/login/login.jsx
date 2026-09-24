@@ -23,8 +23,6 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ================= LOGIN =================
-
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -32,19 +30,15 @@ function Login() {
     setLoading(true);
 
     try {
+      const endpoint = isRegistering ? "register" : "login";
+
       const response = await fetch(
-       `https://voice-translator-assistant.onrender.com/auth/${
-  isRegistering ? "register" : "login"
-}
-          isRegistering ? "register" : "login"
-        }`,
+        `https://voice-translator-assistant.onrender.com/auth/${endpoint}`,
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
           },
-
           body: JSON.stringify({
             name: name,
             password: password,
@@ -55,23 +49,18 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log("✅ Login successful:", data);
+        console.log("Login successful:", data);
 
         localStorage.setItem("userName", data.name);
         localStorage.setItem("authToken", data.token);
 
         navigate("/dashboard");
       } else {
-        setError(
-          data.detail || "Invalid name or password"
-        );
+        setError(data.detail || "Invalid name or password");
       }
     } catch (error) {
-      console.error("❌ Login error:", error);
-
-      setError(
-        "Unable to connect to the server."
-      );
+      console.error("Login error:", error);
+      setError("Unable to connect to the server.");
     } finally {
       setLoading(false);
     }
@@ -80,14 +69,9 @@ function Login() {
   return (
     <div className="login-page">
 
-      {/* Background decoration */}
-
       <div className="login-bg-circle circle-one"></div>
       <div className="login-bg-circle circle-two"></div>
       <div className="login-bg-circle circle-three"></div>
-
-
-      {/* Main Login Container */}
 
       <div className="login-container">
 
@@ -105,12 +89,9 @@ function Login() {
                 Voice<span>Translate</span>
               </h2>
 
-              <p>
-                Speak. Translate. Connect.
-              </p>
+              <p>Speak. Translate. Connect.</p>
             </div>
           </div>
-
 
           <div className="info-content">
 
@@ -122,7 +103,6 @@ function Login() {
             <h1>
               Break the
               <br />
-
               <span>Language Barrier.</span>
             </h1>
 
@@ -134,48 +114,45 @@ function Login() {
 
           </div>
 
-
           <div className="login-features">
 
             <div className="mini-feature">
+
               <div className="mini-icon">
                 <FaGlobe />
               </div>
 
               <div>
-                <strong>
-                  Multiple Languages
-                </strong>
+                <strong>Multiple Languages</strong>
 
                 <span>
                   Connect with people worldwide
                 </span>
               </div>
+
             </div>
 
-
             <div className="mini-feature">
+
               <div className="mini-icon">
                 <FaBolt />
               </div>
 
               <div>
-                <strong>
-                  Real-Time Translation
-                </strong>
+                <strong>Real-Time Translation</strong>
 
                 <span>
                   Fast and intelligent voice translation
                 </span>
               </div>
+
             </div>
 
           </div>
 
         </div>
 
-
-        {/* RIGHT SIDE LOGIN */}
+        {/* RIGHT SIDE */}
 
         <div className="login-card">
 
@@ -185,11 +162,12 @@ function Login() {
             </div>
           </div>
 
-
           <div className="login-heading">
 
             <h1>
-                {isRegistering ? "Create Your Account" : "Welcome Back"}
+              {isRegistering
+                ? "Create Your Account"
+                : "Welcome Back"}
             </h1>
 
             <p>
@@ -200,16 +178,13 @@ function Login() {
 
           </div>
 
-
           <form onSubmit={handleLogin}>
 
             {/* NAME */}
 
             <div className="input-group">
 
-              <label>
-                Name
-              </label>
+              <label>Name</label>
 
               <div className="input-wrapper">
 
@@ -219,9 +194,7 @@ function Login() {
                   type="text"
                   placeholder="Enter your name"
                   value={name}
-                  onChange={(e) =>
-                    setName(e.target.value)
-                  }
+                  onChange={(e) => setName(e.target.value)}
                   required
                 />
 
@@ -229,30 +202,21 @@ function Login() {
 
             </div>
 
-
             {/* PASSWORD */}
 
             <div className="input-group">
 
-              <label>
-                Password
-              </label>
+              <label>Password</label>
 
               <div className="input-wrapper">
 
                 <FaLock className="input-icon" />
 
                 <input
-                  type={
-                    showPassword
-                      ? "text"
-                      : "password"
-                  }
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value)
-                  }
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                 />
 
@@ -260,9 +224,7 @@ function Login() {
                   type="button"
                   className="password-toggle"
                   onClick={() =>
-                    setShowPassword(
-                      !showPassword
-                    )
+                    setShowPassword(!showPassword)
                   }
                 >
                   {showPassword ? (
@@ -276,7 +238,6 @@ function Login() {
 
             </div>
 
-
             {/* ERROR */}
 
             {error && (
@@ -285,8 +246,7 @@ function Login() {
               </div>
             )}
 
-
-            {/* LOGIN BUTTON */}
+            {/* BUTTON */}
 
             <button
               className="login-btn"
@@ -301,7 +261,10 @@ function Login() {
                 </>
               ) : (
                 <>
-                  {isRegistering ? "Create Account" : "Sign In"}
+                  {isRegistering
+                    ? "Create Account"
+                    : "Sign In"}
+
                   <FaArrowRight />
                 </>
               )}
@@ -309,7 +272,6 @@ function Login() {
             </button>
 
           </form>
-
 
           {/* DIVIDER */}
 
@@ -319,16 +281,13 @@ function Login() {
             <span></span>
           </div>
 
-
           {/* GOOGLE */}
 
           <button
             className="google-btn"
             type="button"
             onClick={() =>
-              alert(
-                "Google login is not connected yet."
-              )
+              alert("Google login is not connected yet.")
             }
           >
 
@@ -337,12 +296,9 @@ function Login() {
               alt="Google"
             />
 
-            <span>
-              Continue with Google
-            </span>
+            <span>Continue with Google</span>
 
           </button>
-
 
           {/* REGISTER */}
 
@@ -358,11 +314,12 @@ function Login() {
                 setError("");
               }}
             >
-              {isRegistering ? "Sign In" : "Create Account"}
+              {isRegistering
+                ? "Sign In"
+                : "Create Account"}
             </span>
 
           </p>
-
 
           {/* SECURITY */}
 
