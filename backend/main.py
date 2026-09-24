@@ -59,12 +59,14 @@ app.add_middleware(
         "http://127.0.0.1:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
+
+        # Vercel frontend
+        "https://voice-translator-assistant-fh1gh329-n-veeksha1.vercel.app",
+        "https://voice-translator-assistant.vercel.app",
     ],
 
     allow_credentials=True,
-
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
 
