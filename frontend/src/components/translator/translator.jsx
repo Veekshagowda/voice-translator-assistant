@@ -875,8 +875,8 @@ function Translator({
                 }
               }}
               src={
-                `http://127.0.0.1:8000${result.audio_url}`
-              }
+  `https://voice-translator-assistant.onrender.com${result.audio_url}`
+}
             />
 
           </div>

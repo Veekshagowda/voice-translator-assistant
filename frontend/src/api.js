@@ -1,4 +1,4 @@
-const API = "http://127.0.0.1:8000";
+const API = "https://voice-translator-assistant.onrender.com";
 
 export function authHeaders() {
     const token = localStorage.getItem("authToken");

@@ -1,4 +1,4 @@
-import "./Topbar.css";
+import "./topbar.css";
 import {  FaUserCircle } from "react-icons/fa";
 
 function Topbar() {
