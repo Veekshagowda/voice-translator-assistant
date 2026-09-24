@@ -1,4 +1,4 @@
-import "./About.css";
+import "./about.css";
 import { motion } from "framer-motion";
 import {
   FaBolt,

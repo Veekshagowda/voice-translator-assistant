@@ -1,4 +1,4 @@
-import "./Features.css";
+import "./features.css";
 import { motion } from "framer-motion";
 import {
   FaMicrophone,
