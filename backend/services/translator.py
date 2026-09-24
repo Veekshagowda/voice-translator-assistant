@@ -1,163 +1,187 @@
-from deep_translator import GoogleTranslator
-from dotenv import load_dotenv
-from google import genai
-import os
+
 import time
+import threading
+from functools import lru_cache
+
+from deep_translator import GoogleTranslator
 
 
-load_dotenv()
+# =========================================================
+# GOOGLE TRANSLATOR RATE LIMIT PROTECTION
+# =========================================================
+
+# Only one Google translation request at a time
+_translation_lock = threading.Lock()
+
+# Minimum time between Google requests
+MIN_REQUEST_INTERVAL = 1.0
+
+_last_request_time = 0.0
 
 
-LANGUAGE_MAP = {
-    "en": "en",
-    "kn": "kn",
-    "hi": "hi",
-    "ta": "ta",
-    "te": "te",
-    "ml": "ml",
-    "mr": "mr",
-    "bn": "bn",
-    "gu": "gu",
-    "pa": "pa",
-    "ur": "ur",
-    "de": "de",
-    "fr": "fr",
-    "es": "es",
-    "it": "it",
-    "pt": "pt",
-    "ru": "ru",
-    "ja": "ja",
-    "ko": "ko",
-    "zh": "zh-CN",
-    "ar": "ar",
-}
+def _wait_before_request():
+    global _last_request_time
+
+    elapsed = time.time() - _last_request_time
+
+    if elapsed < MIN_REQUEST_INTERVAL:
+        time.sleep(
+            MIN_REQUEST_INTERVAL - elapsed
+        )
+
+    _last_request_time = time.time()
 
 
-def _translate_tulu_with_gemini(text: str) -> str:
-    api_key = os.getenv("GEMINI_API_KEY")
+# =========================================================
+# CACHED TRANSLATION
+# =========================================================
 
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is not configured.")
+@lru_cache(maxsize=500)
+def translate_text_cached(
+    text: str,
+    target_language: str
+):
 
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=(
-            "Translate the following text into natural Tulu (ತುಳು). "
-            "Return only the Tulu translation, with no explanation.\n\n"
-            f"Text: {text.strip()}"
-        ),
-    )
+    text = text.strip()
+    target_language = target_language.strip().lower()
 
-    translated = (response.text or "").strip()
-    if not translated:
-        raise ValueError("Gemini returned an empty Tulu translation.")
+    if not text:
+        return ""
 
-    return translated
+    # -----------------------------------------------------
+    # Protect GoogleTranslator from simultaneous requests
+    # -----------------------------------------------------
 
+    with _translation_lock:
+
+        _wait_before_request()
+
+        translator = GoogleTranslator(
+            source="auto",
+            target=target_language
+        )
+
+        # -------------------------------------------------
+        # Retry several times if Google rate-limits us
+        # -------------------------------------------------
+
+        last_error = None
+
+        for attempt in range(3):
+
+            try:
+
+                print(
+                    f"🌐 Translation request "
+                    f"(attempt {attempt + 1}/3)"
+                )
+
+                translated = translator.translate(text)
+
+                if translated:
+                    return translated.strip()
+
+                raise RuntimeError(
+                    "Google returned empty translation"
+                )
+
+            except Exception as e:
+
+                last_error = e
+
+                print(
+                    f"⚠️ Google translation attempt "
+                    f"{attempt + 1} failed:",
+                    repr(e)
+                )
+
+                # Wait longer before every retry
+                if attempt < 2:
+
+                    wait_time = 2 ** attempt
+
+                    print(
+                        f"⏳ Waiting {wait_time} seconds "
+                        "before retry..."
+                    )
+
+                    time.sleep(wait_time)
+
+                    _wait_before_request()
+
+        raise RuntimeError(
+            f"Google translation failed: {last_error}"
+        )
+
+
+# =========================================================
+# MAIN TRANSLATION FUNCTION
+# =========================================================
 
 def translate_text(
     text: str,
     target_language: str
 ):
 
-    if not text or not text.strip():
-
-        raise ValueError(
-            "No text available for translation."
-        )
-
-
-    target_language = (
-        target_language
-        .lower()
-        .strip()
-    )
-
-    if target_language == "tcy":
-        return _translate_tulu_with_gemini(text)
-
-    target = LANGUAGE_MAP.get(
-        target_language
-    )
-
-
-    if not target:
-
-        raise ValueError(
-            f"Unsupported target language: "
-            f"{target_language}"
-        )
-
-
-    print("====================================")
-    print("🌐 TRANSLATION")
-    print("====================================")
-
-    print(
-        "Target:",
-        target
-    )
-
-    print(
-        "Input:",
-        repr(text)
-    )
-
-
     try:
 
-        translator = GoogleTranslator(
-            source="auto",
-            target=target
+        # -------------------------------------------------
+        # Validate text
+        # -------------------------------------------------
+
+        if not text or not text.strip():
+
+            return ""
+
+        text = text.strip()
+        target_language = target_language.strip().lower()
+
+        print("\n====================================")
+        print("🌐 TRANSLATION REQUEST")
+        print("====================================")
+
+        print("Text:", repr(text))
+        print("Target:", target_language)
+
+        # -------------------------------------------------
+        # If source and target are the same,
+        # don't call Google unnecessarily
+        # -------------------------------------------------
+
+        # This is useful if the detected source language
+        # matches the selected target language.
+
+        if target_language in ("auto", ""):
+            raise ValueError(
+                "Target language is required"
+            )
+
+        # -------------------------------------------------
+        # Cached translation
+        # -------------------------------------------------
+
+        translated = translate_text_cached(
+            text,
+            target_language
         )
 
-
-        translated = None
-
-        for attempt in range(3):
-            translated = translator.translate(
-                text.strip()
-            )
-
-            if translated and not translated.lstrip().startswith(
-                "Error 500 (Server Error)"
-            ):
-                break
-
-            if attempt < 2:
-                time.sleep(1)
-
-
-        if not translated or translated.lstrip().startswith(
-            "Error 500 (Server Error)"
-        ):
-
-            raise ValueError(
-                "Translation returned empty text."
-            )
-
-
-        translated = translated.strip()
-
-
         print(
-            "✅ Translated:",
+            "Translated:",
             repr(translated)
         )
 
+        print("====================================\n")
 
         return translated
-
 
     except Exception as e:
 
         print(
-            "❌ Translation failed:",
+            "\n❌ Translation error:",
             repr(e)
         )
 
-
-        raise ValueError(
+        raise RuntimeError(
             f"Translation failed: {str(e)}"
         )
+
