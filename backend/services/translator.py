@@ -1,39 +1,51 @@
-
+import os
 import time
-import threading
 from functools import lru_cache
 
-from deep_translator import GoogleTranslator
+from dotenv import load_dotenv
+from google import genai
 
 
 # =========================================================
-# GOOGLE TRANSLATOR RATE LIMIT PROTECTION
+# LOAD ENVIRONMENT
 # =========================================================
 
-# Only one Google translation request at a time
-_translation_lock = threading.Lock()
+load_dotenv()
 
-# Minimum time between Google requests
-MIN_REQUEST_INTERVAL = 1.0
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-_last_request_time = 0.0
+if not GEMINI_API_KEY:
+    raise RuntimeError(
+        "GEMINI_API_KEY not found. "
+        "Please add GEMINI_API_KEY to your environment variables."
+    )
 
 
-def _wait_before_request():
-    global _last_request_time
-
-    elapsed = time.time() - _last_request_time
-
-    if elapsed < MIN_REQUEST_INTERVAL:
-        time.sleep(
-            MIN_REQUEST_INTERVAL - elapsed
-        )
-
-    _last_request_time = time.time()
+client = genai.Client(
+    api_key=GEMINI_API_KEY
+)
 
 
 # =========================================================
-# CACHED TRANSLATION
+# LANGUAGE NAMES
+# =========================================================
+
+LANGUAGE_NAMES = {
+    "en": "English",
+    "kn": "Kannada",
+    "hi": "Hindi",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "ml": "Malayalam",
+    "mr": "Marathi",
+    "gu": "Gujarati",
+    "bn": "Bengali",
+    "tcy": "Tulu",
+}
+
+
+# =========================================================
+# GEMINI TRANSLATION
 # =========================================================
 
 @lru_cache(maxsize=500)
@@ -48,70 +60,109 @@ def translate_text_cached(
     if not text:
         return ""
 
-    # -----------------------------------------------------
-    # Protect GoogleTranslator from simultaneous requests
-    # -----------------------------------------------------
+    target_name = LANGUAGE_NAMES.get(
+        target_language,
+        target_language
+    )
 
-    with _translation_lock:
+    prompt = f"""
+You are a professional multilingual translation system.
 
-        _wait_before_request()
+Translate the following text into {target_name}.
 
-        translator = GoogleTranslator(
-            source="auto",
-            target=target_language
-        )
+Rules:
+1. Return ONLY the translated text.
+2. Do not explain the translation.
+3. Do not add quotation marks.
+4. Preserve the original meaning exactly.
+5. Keep names, numbers, dates and important details correct.
+6. Do not add extra sentences.
+7. Do not summarize.
+8. Do not change the meaning.
+9. If the input is already in {target_name}, return it naturally.
+10. Preserve the speaker's intended meaning.
 
-        # -------------------------------------------------
-        # Retry several times if Google rate-limits us
-        # -------------------------------------------------
+Text:
+{text}
+"""
 
-        last_error = None
+    max_retries = 4
 
-        for attempt in range(3):
+    for attempt in range(1, max_retries + 1):
 
-            try:
+        try:
 
-                print(
-                    f"🌐 Translation request "
-                    f"(attempt {attempt + 1}/3)"
-                )
+            print("\n====================================")
+            print("🌐 GEMINI TRANSLATION")
+            print("====================================")
+            print("Target:", target_name)
+            print("Input:", repr(text))
+            print("Attempt:", attempt)
 
-                translated = translator.translate(text)
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
+            )
 
-                if translated:
-                    return translated.strip()
+            translated = response.text
 
+            if not translated:
                 raise RuntimeError(
-                    "Google returned empty translation"
+                    "Gemini returned an empty translation."
                 )
 
-            except Exception as e:
+            translated = translated.strip()
 
-                last_error = e
+            if not translated:
+                raise RuntimeError(
+                    "Gemini returned an empty translation."
+                )
+
+            print("Translated:", repr(translated))
+            print("====================================\n")
+
+            return translated
+
+        except Exception as e:
+
+            error_message = str(e)
+
+            print(
+                f"❌ Gemini translation error "
+                f"(attempt {attempt}/{max_retries}):"
+            )
+
+            print(error_message)
+
+            temporary_error = (
+                "503" in error_message
+                or "UNAVAILABLE" in error_message.upper()
+                or "429" in error_message
+                or "RESOURCE_EXHAUSTED" in error_message.upper()
+                or "high demand" in error_message.lower()
+                or "rate limit" in error_message.lower()
+            )
+
+            if temporary_error and attempt < max_retries:
+
+                delay = 2 ** (attempt - 1)
 
                 print(
-                    f"⚠️ Google translation attempt "
-                    f"{attempt + 1} failed:",
-                    repr(e)
+                    "⏳ Gemini temporarily unavailable. "
+                    f"Retrying in {delay} seconds..."
                 )
 
-                # Wait longer before every retry
-                if attempt < 2:
+                time.sleep(delay)
 
-                    wait_time = 2 ** attempt
+                continue
 
-                    print(
-                        f"⏳ Waiting {wait_time} seconds "
-                        "before retry..."
-                    )
+            raise RuntimeError(
+                f"Gemini translation failed: {error_message}"
+            ) from e
 
-                    time.sleep(wait_time)
-
-                    _wait_before_request()
-
-        raise RuntimeError(
-            f"Google translation failed: {last_error}"
-        )
+    raise RuntimeError(
+        "Gemini translation failed after multiple attempts."
+    )
 
 
 # =========================================================
@@ -123,65 +174,17 @@ def translate_text(
     target_language: str
 ):
 
-    try:
+    if not text or not text.strip():
+        return ""
 
-        # -------------------------------------------------
-        # Validate text
-        # -------------------------------------------------
+    target_language = target_language.strip().lower()
 
-        if not text or not text.strip():
-
-            return ""
-
-        text = text.strip()
-        target_language = target_language.strip().lower()
-
-        print("\n====================================")
-        print("🌐 TRANSLATION REQUEST")
-        print("====================================")
-
-        print("Text:", repr(text))
-        print("Target:", target_language)
-
-        # -------------------------------------------------
-        # If source and target are the same,
-        # don't call Google unnecessarily
-        # -------------------------------------------------
-
-        # This is useful if the detected source language
-        # matches the selected target language.
-
-        if target_language in ("auto", ""):
-            raise ValueError(
-                "Target language is required"
-            )
-
-        # -------------------------------------------------
-        # Cached translation
-        # -------------------------------------------------
-
-        translated = translate_text_cached(
-            text,
-            target_language
+    if target_language == "auto":
+        raise ValueError(
+            "Target language cannot be auto."
         )
 
-        print(
-            "Translated:",
-            repr(translated)
-        )
-
-        print("====================================\n")
-
-        return translated
-
-    except Exception as e:
-
-        print(
-            "\n❌ Translation error:",
-            repr(e)
-        )
-
-        raise RuntimeError(
-            f"Translation failed: {str(e)}"
-        )
-
+    return translate_text_cached(
+        text.strip(),
+        target_language
+    )

@@ -33,7 +33,9 @@ function Login() {
       const endpoint = isRegistering ? "register" : "login";
 
       const response = await fetch(
-        `https://voice-translator-assistant.onrender.com/auth/${endpoint}`,
+        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/auth/${
+          isRegistering ? "register" : "login"
+        }`,
         {
           method: "POST",
           headers: {
@@ -45,7 +47,6 @@ function Login() {
           }),
         }
       );
-
       const data = await response.json();
 
       if (response.ok) {

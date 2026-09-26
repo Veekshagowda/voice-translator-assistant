@@ -1,4 +1,4 @@
-const API = "https://voice-translator-assistant.onrender.com";
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 export function authHeaders() {
     const token = localStorage.getItem("authToken");
@@ -6,6 +6,10 @@ export function authHeaders() {
     return token
         ? { Authorization: `Bearer ${token}` }
         : {};
+}
+
+export function apiUrl(path) {
+    return `${API}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 // ================= TRANSLATE AUDIO =================
@@ -38,7 +42,7 @@ export async function translateAudio(
     console.log("Target:", targetLanguage);
 
     const response = await fetch(
-        `${API}/speech/translate`,
+        apiUrl("/speech/translate"),
         {
             method: "POST",
             headers: authHeaders(),
@@ -75,7 +79,7 @@ export async function translateAudio(
 export async function saveHistory(data) {
 
     const response = await fetch(
-        `${API}/history/`,
+        apiUrl("/history/"),
         {
             method: "POST",
             headers: {

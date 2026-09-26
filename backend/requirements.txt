@@ -3,7 +3,7 @@ uvicorn
 SQLAlchemy
 python-multipart
 openai-whisper
-deep-translator
+
 google-genai
 python-dotenv
 gtts

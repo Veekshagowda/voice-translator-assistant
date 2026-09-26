@@ -9,7 +9,7 @@ function History() {
   const loadHistory = async () => {
     try {
       const response = await fetch(
-        "https://voice-translator-assistant.onrender.com/history/",
+        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/history/`,
         {
           headers: authHeaders(),
         }

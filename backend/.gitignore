@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated audio
+backend/uploads/
+backend/outputs/
+*.mp3
+*.wav
+*.webm
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Vercel
+.vercel/
+uploads/
+outputs/
+*.db
+*.sqlite
+*.sqlite3
+*.webm
+*.wav
+.env
+__pycache__/
+*.pyc
+.venv/
